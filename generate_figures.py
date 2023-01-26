@@ -28,6 +28,7 @@ env = Env()
 env.read_env("./.env", recurse=False)
 
 PATH_CRUNCHBASE = env.str("PATH_CRUNCHBASE", None)
+PATH_CORRELATIONS = env.str("PATH_CORRELATIONS", None)
 PATH_EXPORT = env.str("PATH_EXPORT", None)
 FILE_EDGELIST = env.str("FILE_EDGELIST", None)
 
@@ -353,7 +354,6 @@ def generate_figure_2() -> None:
     ax[0].legend(ncol=2, edgecolor="none")
 
     # Figure 2 & 3
-
     dates = pd.date_range("2014", "2022", freq="3m")
 
     nedges = []
@@ -590,6 +590,174 @@ def generate_figure_3():
     return None
 
 
+def generate_figure_4():
+    """
+    Generates the correlation plot
+    :return:
+    """
+
+    # Save results
+    corrConnected = np.load(PATH_EXPORT + "corrCMMean.npy")
+
+    corrCMMean = np.load(PATH_EXPORT + "corrCMMean.npy")
+    corrCMStd = np.load(PATH_EXPORT + "corrCMStd.npy")
+    corrBMMean = np.load(PATH_EXPORT + "corrBMMean.npy")
+    corrBMStd = np.load(PATH_EXPORT + "corrBMStd.npy")
+
+    corrERMean = np.load(PATH_EXPORT + "corrERMean.npy")
+    corrERStd = np.load(PATH_EXPORT + "corrERStd.npy")
+
+    # Produce result figure
+    palette = ["#011f4b", "#03396c", "#005b96", "#6497b1", "#b3cde0", "#f15152", "#09814a", "#efa00b", "#A67DB8"]
+
+    from matplotlib import ticker
+
+    fig, ax = plt.subplots(2, 1, figsize=(10, 8.5), dpi=200)
+
+    i = 0
+    hh = 0.4
+
+    relative = True
+
+    # Figure 1
+
+    for i in range(1):
+        denominator = corrERMean[i] if relative else 1
+
+        ax[i].plot(
+            range(1, 6),
+            corrConnected[i] / denominator,
+            color=palette[2],
+            marker="o",
+            mfc="white",
+            markersize=7,
+            zorder=3,
+            label="True Network",
+        )
+        ax[i].errorbar(
+            range(1, 6),
+            corrCMMean[i] / denominator,
+            yerr=corrCMStd[i],
+            marker="o",
+            mfc="white",
+            markersize=7,
+            zorder=2,
+            color=palette[5],
+            label="Configuration Model",
+        )
+        ax[i].errorbar(
+            range(1, 6),
+            corrBMMean[i] / denominator,
+            yerr=corrBMStd[i],
+            marker="o",
+            mfc="white",
+            markersize=7,
+            zorder=1,
+            color=palette[6],
+            label="Block Model",
+        )
+        ax[i].errorbar(
+            range(1, 6),
+            corrERMean[i] / denominator,
+            yerr=corrERStd[i],
+            marker="o",
+            mfc="white",
+            markersize=7,
+            zorder=0,
+            color=palette[7],
+            label="Erdos-Renyi",
+        )
+        ax[i].set_ylabel("Correlation (Rescaled)")
+
+        ax[i].set_xticks(np.arange(1, 6))
+        # ... and label them with the respective list entries
+        ax[i].set_xticklabels(["{}".format(i) for i in np.arange(1, 6)])
+        ax[i].yaxis.set_major_formatter(ticker.FormatStrFormatter("%.2f"))
+
+    ax[0].set_xlabel("Network Distance")
+    ax[0].legend()
+
+    # Fig 2
+
+    i = 10
+    distcenters = 1.5
+
+    randmean = corrBMMean[0][0]
+    delta = 0.25
+
+    ax[1].barh(i + delta, corrConnected[0][0] / randmean, height=hh, label="True Network", color=palette[2])
+    i -= distcenters
+    ax[1].barh(
+        i + delta,
+        corrCMMean[0][0] / randmean,
+        xerr=corrCMStd[0][0] / randmean,
+        height=hh,
+        label="Configuration Model",
+        color=palette[5],
+    )
+    i -= distcenters
+    ax[1].barh(
+        i + delta,
+        corrBMMean[0][0] / randmean,
+        xerr=corrBMStd[0][0] / randmean,
+        height=hh,
+        label="Block Model",
+        color=palette[6],
+    )
+    i -= distcenters
+    ax[1].barh(
+        i + delta,
+        corrERMean[0][0] / randmean,
+        xerr=corrERStd[0][0] / randmean,
+        height=hh,
+        label="Erdos-Renyi",
+        color=palette[7],
+    )
+
+    delta = -0.25
+    i = 10
+    randmean = corrBMMean[1][0]
+
+    ax[1].barh(i + delta, corrConnected[1][0] / randmean, height=hh, label="True Network", color=palette[2], alpha=0.6)
+    i -= distcenters
+    ax[1].barh(
+        i + delta,
+        corrCMMean[1][0] / randmean,
+        xerr=corrCMStd[1][0] / randmean,
+        height=hh,
+        label="Configuration Model",
+        color=palette[5],
+        alpha=0.6,
+    )
+    i -= distcenters
+    ax[1].barh(
+        i + delta,
+        corrBMMean[1][0] / randmean,
+        xerr=corrBMStd[1][0] / randmean,
+        height=hh,
+        label="Block Model",
+        color=palette[6],
+        alpha=0.6,
+    )
+    i -= distcenters
+    ax[1].barh(
+        i + delta,
+        corrERMean[1][0] / randmean,
+        xerr=corrERStd[1][0] / randmean,
+        height=hh,
+        label="Erdos-Renyi",
+        color=palette[7],
+        alpha=0.6,
+    )
+
+    ax[1].set_xlim((0, None))
+    ax[1].set_yticks([10 - i * distcenters for i in range(4)])
+    ax[1].set_yticklabels(["True Network", "Configuration Model", "Block Model", "Erdos-Renyi"], rotation=30)
+    ax[1].set_xlabel("Correlation (Rescaled)")
+    plt.savefig(PATH_EXPORT + "figure_4.pdf", dpi=300)
+    plt.show()
+
+
 if __name__ == "__main__":
 
     arglist = sys.argv[1:]
@@ -602,12 +770,14 @@ if __name__ == "__main__":
     figure_1 = False
     figure_2 = False
     figure_3 = False
+    figure_4 = False
 
     for o, a in optlist:
         if o == "-a":
             figure_1 = True
             figure_2 = True
             figure_3 = True
+            figure_4 = True
 
         if o == "--figure":
             if "1" in a:
@@ -616,6 +786,8 @@ if __name__ == "__main__":
                 figure_2 = True
             if "3" in a:
                 figure_3 = True
+            if "4" in a:
+                figure_4 = True
 
         # Change mpl params
         setup_mpl()
@@ -625,4 +797,6 @@ if __name__ == "__main__":
     if figure_2 is True:
         generate_figure_2()
     if figure_3 is True:
+        generate_figure_3()
+    if figure_4 is True:
         generate_figure_3()

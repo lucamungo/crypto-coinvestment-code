@@ -2,6 +2,7 @@
 # Utils file
 # ------------------------------------------------------------------------------------------------------------------- #
 from typing import List, Union
+import numpy as np
 import pandas as pd
 import matplotlib as mpl
 
@@ -76,3 +77,52 @@ def flagsafe(x, word):
             return False
     else:
         return False
+
+
+def generate_network_model(adj: np.array[:, :], edgelist: dict, blocks: dict) -> np.array[:, :]:
+    """
+    Generates a network with a given block structure
+    """
+    for (cl_i,cl_j) , nlinks in edgelist.items():
+        for k in range(nlinks):
+            i,j = create_link(cl_i, cl_j, adj, blocks)
+            adj[i,j] = 1
+    return adj
+
+
+def create_link(cl_i: int, cl_j: int, adj: np.array[:, :], blocks: dict, recursive: bool = False) -> List[int, int]:
+    """
+    Returns the index of two nodes to be connected by a link
+    :param cl_i: cluster of node i
+    :param cl_j: cluster of node j
+    :param adj: adjacency matrix of the in-the-making network
+    :param blocks: block structure of the network
+    :param recursive:
+    :return:
+    """
+    i = np.random.choice(blocks[cl_i])
+    j = np.random.choice(blocks[cl_j])
+    if recursive:
+        if adj[i,j] == 0:
+            return i,j
+        else:
+            return create_link(cl_i,cl_j,adj,blocks)
+    else:
+        return i,j
+
+
+def compute_growthrate(x,k=1):
+    """
+    Computes log-growthrates
+    """
+    return np.log(x).diff(k).replace([-np.inf,np.inf],np.nan)
+
+
+def center_and_normalize(x):
+    """
+    Centers and normalizes the time-series
+    """
+    y = x-x.mean()
+    N = y.count()
+    var_proxy = (y.var()*(N-1)-y**2)/(N-2.)
+    return y/np.sqrt(var_proxy)
