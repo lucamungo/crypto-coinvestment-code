@@ -604,12 +604,12 @@ if __name__ == "__main__":
     figure_3 = False
 
     for o, a in optlist:
-        if (o == "-a"):
+        if o == "-a":
             figure_1 = True
             figure_2 = True
             figure_3 = True
 
-        if (o == "--figure"):
+        if o == "--figure":
             if "1" in a:
                 figure_1 = True
             if "2" in a:
@@ -617,7 +617,7 @@ if __name__ == "__main__":
             if "3" in a:
                 figure_3 = True
 
-    # Change mpl params
+        # Change mpl params
         setup_mpl()
 
     if figure_1 is True:
@@ -626,4 +626,3 @@ if __name__ == "__main__":
         generate_figure_2()
     if figure_3 is True:
         generate_figure_3()
-
